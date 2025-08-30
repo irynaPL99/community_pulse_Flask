@@ -12,7 +12,14 @@ def get_questions():
     Returns a list of all questions.
     """
     questions = Question.query.all()
-    data = [{'id': item.id, 'question': item.question} for item in questions]
+    data = [
+        {
+            'id': item.id,
+            'question': item.question,
+            'category_id': item.category_id,
+            'category_name': item.category.name if item.category else None
+        }
+         for item in questions]
     #return jsonify(data)
     return jsonify({
         'message': 'All questions:',

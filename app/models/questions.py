@@ -65,9 +65,10 @@ class Statistic(db.Model):
     def __str__(self):
         return f'id: {self.question_id}, agree: {self.agree_count}, disagree: {self.disagree_count}'
 
-    def update_counts(self, agree=True):
-        """update agree_count or disagree_count"""
-        if agree:
-            self.agree_count += 1
-        else:
-            self.disagree_count += 1
+    # update_counts - метод экземпляра класса, который не фиксирует изменения в базе данных
+    #def update_counts(self, agree=True):
+    #    """update agree_count or disagree_count"""
+    #    if agree:
+    #        self.agree_count += 1
+    #    else:
+    #        self.disagree_count += 1

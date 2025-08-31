@@ -5,9 +5,12 @@ from .models import db
 from config import DevelopmentConfig, ProductionConfig, TestingConfig
 from .routes.questions import questions_bp
 from .routes.response import response_bp
+from .routes.categories import categories_bp
+from .routes.statistics import statistics_bp
+
 
 from .models.response import Response
-from .models.questions import Statistic, Question
+from .models.questions import Statistic, Question, Category
 
 import os
 
@@ -55,5 +58,7 @@ def create_app():
     # делая их доступными для обработки HTTP-запросов
     app.register_blueprint(questions_bp)
     app.register_blueprint(response_bp)
+    app.register_blueprint(categories_bp)
+    app.register_blueprint(statistics_bp)
 
     return app

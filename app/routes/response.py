@@ -3,6 +3,7 @@ from app.models import db
 from app.models.response import Response
 from app.models.questions import Question
 
+
 response_bp = Blueprint('response', __name__, url_prefix='/responses')
 
 @response_bp.route('/', methods=['GET'])

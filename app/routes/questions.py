@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
+from pydantic import ValidationError
 from app.models.questions import Question, Category, Statistic
 from app.models import db
+from app.schemas.questions import QuestionResponse, QuestionCreate # Pydantic модель
 
 
 questions_bp = Blueprint('questions', __name__, url_prefix='/questions')
@@ -12,14 +14,16 @@ def get_questions():
     Returns a list of all questions.
     """
     questions = Question.query.all()
-    data = [
-        {
-            'id': item.id,
-            'question': item.question,
-            'category_id': item.category_id,
-            'category_name': item.category.name if item.category else None
-        }
-         for item in questions]
+    data = []
+    for item in questions:
+        try:
+            #  Сериализуем объекты SQLAlchemy в Pydantic модели с валидацией
+            res = QuestionResponse.model_validate(item)
+            res = res.model_dump() # -> dict
+            data.append(res)
+        except ValidationError as e:
+            continue
+
     return jsonify({
         'message': 'All questions:',
         'total': len(data),
@@ -33,23 +37,34 @@ def create_question():
     Creates a new question.
     """
     data = request.get_json()
-    if not data or 'question' not in data:
-        return jsonify({'error': 'No text provided'}), 400
+    try:
+        question_data = QuestionCreate(**data)
+    except ValidationError as e:
+        return jsonify({'error': str(e)}), 400
 
     try:
-        question = Question(question=data['question'])
-        if 'category_id' in data:
-            question.category_id = data['category_id']
+        # Проверка существования категории
+        category = Category.query.get(question_data.category_id)
+        if not category:
+            return jsonify({'error': 'Category with that id does not exist'}), 400
+
+        question = Question(question=question_data.question, category_id=question_data.category_id)
         db.session.add(question)
         db.session.commit()
-        return jsonify({'id': question.id, 'question': question.question, 'category_id': question.category_id}), 201
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+
+        # Формирование ответа со всеми полями
+        response_data = QuestionResponse(
+            id=question.id,
+            question=question.question,
+            category_id=question.category_id
+        )
+        return jsonify(response_data.model_dump()), 201 # model_dump()->dict
+
     except Exception as e:
         db.session.rollback()
-        print(f"Error: {e}")
+        print(f"Error creating question: {str(e)}")
+        # Оставлен print для отладки, можно убрать
         return jsonify({'error': 'Internal server error'}), 500
-
 
 @questions_bp.route('/<int:id>', methods=['GET'])
 def get_question(id):
